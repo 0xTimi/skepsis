@@ -28,10 +28,11 @@ Examples of unacceptable behavior:
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-`conduct@skepsis.dev`. All complaints will be reviewed and investigated
-promptly and fairly. Community leaders are obligated to respect the privacy and
-security of the reporter of any incident.
+reported to the project maintainer privately via a
+[GitHub private report](https://github.com/0xTimi/skepsis/security/advisories/new)
+or by direct message to [@0xTimi](https://github.com/0xTimi). All complaints will
+be reviewed and investigated promptly and fairly. The maintainer is obligated to
+respect the privacy and security of the reporter of any incident.
 
 ## Attribution
 

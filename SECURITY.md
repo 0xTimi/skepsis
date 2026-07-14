@@ -15,8 +15,8 @@ itself.
 
 Instead, use GitHub's private
 [**Report a vulnerability**](https://github.com/0xTimi/skepsis/security/advisories/new)
-workflow (Security → Advisories), or email the maintainers at
-`security@skepsis.dev`.
+workflow (Security → Advisories). This keeps the report confidential until a fix
+is ready.
 
 We aim to acknowledge reports within **72 hours** and to ship a fix or mitigation
 within **90 days**, coordinating disclosure with you.
