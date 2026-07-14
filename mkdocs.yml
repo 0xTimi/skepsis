@@ -1,0 +1,54 @@
+site_name: Skepsis
+site_description: Multi-model consensus + sanitizer verification for C/C++ memory bugs.
+site_url: https://0xtimi.github.io/skepsis
+repo_url: https://github.com/0xTimi/skepsis
+repo_name: 0xTimi/skepsis
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  icon:
+    logo: material/magnify-scan
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - content.code.copy
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Methodology: methodology.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.arithmatex:
+      generic: true
+  - attr_list
+  - md_in_html
+
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]

@@ -1,0 +1,40 @@
+name: 🐛 Bug report
+description: Something isn't working as expected.
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to file a bug! Please fill out the sections below.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including the exact command you ran.
+      placeholder: "skepsis scan ./src --panel anthropic,openai ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Skepsis version
+      description: Output of `skepsis version`.
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version & OS
+      placeholder: "3.12 / Ubuntu 24.04"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      render: shell

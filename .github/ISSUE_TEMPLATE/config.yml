@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/0xTimi/skepsis/discussions
+    about: Questions, ideas, and show-and-tell.
+  - name: 🔒 Report a security issue
+    url: https://github.com/0xTimi/skepsis/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.
