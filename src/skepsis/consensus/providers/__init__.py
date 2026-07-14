@@ -21,7 +21,7 @@ __all__ = [
     "extract_json",
 ]
 
-available_providers = ("mock", "anthropic", "openai", "ollama")
+available_providers = ("mock", "anthropic", "openai", "ollama", "gemini", "claude-cli")
 
 
 def build_provider(provider_id: str, settings: Settings) -> LLMProvider:
@@ -56,6 +56,23 @@ def build_provider(provider_id: str, settings: Settings) -> LLMProvider:
             settings.openai_model,
             base,
             settings.request_timeout,
+        )
+    if pid == "gemini":
+        # Native Gemini API (works with a Vertex or AI Studio API key).
+        from skepsis.consensus.providers.gemini import GeminiProvider
+
+        return GeminiProvider(
+            settings.gemini_api_key,
+            settings.gemini_model,
+            settings.gemini_base_url,
+            settings.request_timeout,
+        )
+    if pid in ("claude-cli", "claude_cli"):
+        # Claude via the Claude Code CLI (`claude -p`) — no API key needed.
+        from skepsis.consensus.providers.claude_cli import ClaudeCliProvider
+
+        return ClaudeCliProvider(
+            settings.claude_cli_model, timeout=max(settings.request_timeout, 120.0)
         )
     raise ProviderError(
         f"Unknown provider {provider_id!r}. Available: {', '.join(available_providers)}."

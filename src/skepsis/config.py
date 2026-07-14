@@ -42,6 +42,10 @@ class Settings(BaseSettings):
         alias="OPENAI_BASE_URL",
         description="Custom OpenAI-compatible endpoint (Ollama, OpenRouter, self-hosted, …).",
     )
+    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_base_url: str = "https://aiplatform.googleapis.com/v1/publishers/google/models"
+    claude_cli_model: str | None = None  # None → the CLI's configured default
 
     # --- Triage performance / robustness ---------------------------------
     request_timeout: float = Field(

@@ -11,6 +11,7 @@ because the refutation role is prompted adversarially.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from skepsis.consensus.aggregate import aggregate
 from skepsis.consensus.prompts import ROLE_SYSTEM, build_user_prompt
@@ -31,12 +32,22 @@ class DebatePanel:
         self.threshold = threshold
 
     def deliberate(self, finding: Finding) -> Verdict:
-        """Collect one opinion per role and aggregate them into a verdict."""
+        """Collect one opinion per role and aggregate them into a verdict.
+
+        The three role queries are independent, so they run concurrently — with a
+        slow endpoint this cuts per-finding latency from three round-trips to one.
+        """
         user = build_user_prompt(finding)
-        opinions: list[Opinion] = []
-        for i, role in enumerate(_ROLES):
-            provider = self.panel[i % len(self.panel)]
-            opinions.append(self._ask(provider, role, user))
+        assignments = [(role, self.panel[i % len(self.panel)]) for i, role in enumerate(_ROLES)]
+        by_role: dict[Role, Opinion] = {}
+        with ThreadPoolExecutor(max_workers=len(assignments)) as pool:
+            futures = {
+                pool.submit(self._ask, provider, role, user): role
+                for role, provider in assignments
+            }
+            for future in as_completed(futures):
+                by_role[futures[future]] = future.result()
+        opinions = [by_role[role] for role in _ROLES]
         return aggregate(finding.id, opinions, threshold=self.threshold)
 
     def _ask(self, provider: LLMProvider, role: Role, user: str) -> Opinion:
