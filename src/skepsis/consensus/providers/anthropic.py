@@ -14,7 +14,9 @@ class AnthropicProvider:
     ``ANTHROPIC_API_KEY``.
     """
 
-    def __init__(self, api_key: str | None, model: str = "claude-sonnet-5") -> None:
+    def __init__(
+        self, api_key: str | None, model: str = "claude-sonnet-5", timeout: float = 60.0
+    ) -> None:
         try:
             import anthropic
         except ImportError as exc:  # pragma: no cover - exercised only without the extra
@@ -25,7 +27,9 @@ class AnthropicProvider:
             raise ProviderError("ANTHROPIC_API_KEY is not set.")
         self.name = model
         self._model = model
-        self._client = anthropic.Anthropic(api_key=api_key)
+        # max_retries=0: fail fast on a slow/hung endpoint instead of the SDK's
+        # default retries; the panel degrades a failed call to a neutral opinion.
+        self._client = anthropic.Anthropic(api_key=api_key, timeout=timeout, max_retries=0)
 
     def complete_json(self, system: str, user: str) -> dict[str, Any]:
         try:

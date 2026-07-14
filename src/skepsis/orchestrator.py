@@ -9,6 +9,7 @@ them together and emits a :class:`~skepsis.models.ScanReport`.
 from __future__ import annotations
 
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from skepsis.config import Settings
@@ -72,22 +73,45 @@ class Skepsis:
         findings = self.scan(target)
         panel = self.make_panel() if triage else None
         runner = SanitizerRunner(self.settings.cc) if verify else None
+        _ = runner  # reserved for harness-driven verification (Stage 3)
 
-        results: list[TriagedFinding] = []
-        total = len(findings)
-        for i, finding in enumerate(findings, start=1):
-            verdict = panel.deliberate(finding) if panel else None
-            triaged = TriagedFinding(finding=finding, verdict=verdict)
-            # Sanitizer verification is only meaningful for confirmed findings
-            # that ship a harness; harness synthesis is out of scope for v0.1.
-            _ = runner  # reserved for harness-driven verification
-            results.append(triaged)
-            if progress:
-                progress(i, total, triaged)
+        if panel is None:
+            results = [TriagedFinding(finding=f) for f in findings]
+        else:
+            results = self._triage_concurrently(findings, panel, progress)
 
+        # Deterministic output order regardless of triage completion order.
+        results.sort(
+            key=lambda t: (t.finding.location.path, t.finding.location.line, t.finding.rule_id)
+        )
         return ScanReport(
             target=str(target),
             tool_version=__version__,
             rules_run=len(self.scanner.rules),
             results=results,
         )
+
+    def _triage_concurrently(
+        self,
+        findings: list[Finding],
+        panel: DebatePanel,
+        progress: ProgressHook | None,
+    ) -> list[TriagedFinding]:
+        """Deliberate over findings in parallel.
+
+        Provider calls are blocking network I/O, so a thread pool gives a near
+        linear speedup — crucial when each finding costs three sequential model
+        calls against a slow endpoint.
+        """
+        results: list[TriagedFinding] = []
+        total = len(findings)
+        workers = max(1, min(self.settings.max_workers, total or 1))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(panel.deliberate, f): f for f in findings}
+            for done, future in enumerate(as_completed(futures), start=1):
+                finding = futures[future]
+                triaged = TriagedFinding(finding=finding, verdict=future.result())
+                results.append(triaged)
+                if progress:
+                    progress(done, total, triaged)
+        return results

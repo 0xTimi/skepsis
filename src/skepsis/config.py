@@ -37,6 +37,19 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-sonnet-5"
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     openai_model: str = "gpt-4.1"
+    openai_base_url: str | None = Field(
+        default=None,
+        alias="OPENAI_BASE_URL",
+        description="Custom OpenAI-compatible endpoint (Ollama, OpenRouter, self-hosted, …).",
+    )
+
+    # --- Triage performance / robustness ---------------------------------
+    request_timeout: float = Field(
+        default=60.0, ge=1.0, description="Per-request timeout (seconds) for LLM providers."
+    )
+    max_workers: int = Field(
+        default=4, ge=1, description="Findings triaged concurrently by the consensus panel."
+    )
 
     # --- Verification ----------------------------------------------------
     sanitizer_runs: int = Field(default=20, ge=1)
