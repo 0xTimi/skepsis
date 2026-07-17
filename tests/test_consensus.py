@@ -53,7 +53,9 @@ def test_aggregate_requires_quorum_of_two() -> None:
     # Score clears the threshold, but a lone role must not confirm on its own.
     opinions = [
         Opinion(role=Role.REACHABILITY, model="m", verdict=True, confidence=0.9, rationale="yes"),
-        Opinion(role=Role.IMPACT, model="m (error)", verdict=False, confidence=0.0, rationale="err"),
+        Opinion(
+            role=Role.IMPACT, model="m (error)", verdict=False, confidence=0.0, rationale="err"
+        ),
         Opinion(
             role=Role.FALSE_POSITIVE, model="m (error)", verdict=False, confidence=0.0, rationale=""
         ),
