@@ -48,6 +48,22 @@ def test_aggregate_vetoes_on_confident_dissent() -> None:
     assert verdict.dissent is True
 
 
+def test_aggregate_requires_quorum_of_two() -> None:
+    # One confident positive + two abstentions (errored roles, confidence 0).
+    # Score clears the threshold, but a lone role must not confirm on its own.
+    opinions = [
+        Opinion(role=Role.REACHABILITY, model="m", verdict=True, confidence=0.9, rationale="yes"),
+        Opinion(role=Role.IMPACT, model="m (error)", verdict=False, confidence=0.0, rationale="err"),
+        Opinion(
+            role=Role.FALSE_POSITIVE, model="m (error)", verdict=False, confidence=0.0, rationale=""
+        ),
+    ]
+    verdict = aggregate("x", opinions, threshold=0.6)
+    assert verdict.confidence >= 0.6  # score alone would have confirmed
+    assert verdict.confirmed is False  # but quorum < 2 blocks it
+    assert "INCONCLUSIVE" in verdict.summary
+
+
 def test_aggregate_empty_is_rejected() -> None:
     verdict = aggregate("x", [], threshold=0.6)
     assert verdict.confirmed is False

@@ -49,9 +49,16 @@ def aggregate(finding_id: str, opinions: list[Opinion], *, threshold: float) -> 
 
     log_sum = sum(math.log(_p_real(o)) for o in opinions)
     score = math.exp(log_sum / len(opinions))
-    confirmed = score >= threshold
+
+    # Require a real quorum: a confirmation must rest on at least two roles that
+    # actually returned a signal. Errored/timed-out roles abstain (confidence 0);
+    # without this a single surviving positive role could confirm on its own.
+    quorum = sum(1 for o in opinions if o.confidence > 0.0)
+    confirmed = score >= threshold and quorum >= 2
 
     summary = _summarize(opinions, score, confirmed)
+    if score >= threshold and quorum < 2:
+        summary += f" — INCONCLUSIVE (only {quorum} role(s) responded)"
     return Verdict(
         finding_id=finding_id,
         confirmed=confirmed,
