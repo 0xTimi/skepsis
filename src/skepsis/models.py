@@ -39,6 +39,7 @@ class VulnClass(str, Enum):
     INTEGER_UNDERFLOW = "integer-underflow"  # CWE-191 / CWE-125
     FORMAT_STRING = "format-string"  # CWE-134
     VERIFY_ORDER = "verify-order"  # CWE-696 / TOCTOU-style
+    OOB_WRITE = "oob-write"  # CWE-787 (computed array index)
     USE_AFTER_FREE = "use-after-free"  # CWE-416
     UNCHECKED_RETURN = "unchecked-return"  # CWE-252
     OTHER = "other"
@@ -50,6 +51,7 @@ class VulnClass(str, Enum):
             VulnClass.INTEGER_UNDERFLOW: "CWE-191",
             VulnClass.FORMAT_STRING: "CWE-134",
             VulnClass.VERIFY_ORDER: "CWE-696",
+            VulnClass.OOB_WRITE: "CWE-787",
             VulnClass.USE_AFTER_FREE: "CWE-416",
             VulnClass.UNCHECKED_RETURN: "CWE-252",
             VulnClass.OTHER: "CWE-000",

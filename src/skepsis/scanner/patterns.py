@@ -111,6 +111,20 @@ RULES: tuple[Rule, ...] = (
         taint_group=1,
         negative_guards=('"',),
     ),
+    # --- Out-of-bounds write via computed index (CWE-787) ----------------
+    Rule(
+        id="SKEP-OW01",
+        vuln_class=VulnClass.OOB_WRITE,
+        severity=Severity.HIGH,
+        title="Array write with a computed (multiplicative) index",
+        message=(
+            "Assignment to an array/pointer element whose index is a computed "
+            "expression involving multiplication (typically a 2-D offset like "
+            "row*width+col). Verify the index cannot exceed the buffer bounds."
+        ),
+        pattern=_c(r"\[[^\]]*\*[^\]]*\]\s*=(?!=)"),
+        negative_guards=("sizeof",),
+    ),
     # --- Verification-order flaws (CWE-696) ------------------------------
     Rule(
         id="SKEP-VO01",

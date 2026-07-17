@@ -45,6 +45,21 @@ def test_non_c_files_skipped(tmp_path: Path) -> None:
     assert Scanner().scan_path(tmp_path) == []
 
 
+def test_oob_write_computed_index_flagged(tmp_path: Path) -> None:
+    src = tmp_path / "d.c"
+    # 2-D flattened write with a multiplicative index — the decoder OOB class.
+    src.write_text("void f(char*fb,int y,int w,int x){ fb[y*w+x] = 7; }", encoding="utf-8")
+    hits = Scanner().scan_path(src)
+    assert any(f.rule_id == "SKEP-OW01" and f.vuln_class is VulnClass.OOB_WRITE for f in hits)
+
+
+def test_oob_write_ignores_equality_and_sizeof(tmp_path: Path) -> None:
+    src = tmp_path / "e.c"
+    src.write_text("int f(int*a,int i){ if (a[i*2] == 3) return 1; return 0; }", encoding="utf-8")
+    hits = Scanner().scan_path(src)
+    assert not any(f.rule_id == "SKEP-OW01" for f in hits)  # '==' is not a write
+
+
 def test_exclude_glob_skips_matching_files(tmp_path: Path) -> None:
     (tmp_path / "lib.c").write_text("void f(char*a,char*b,int n){ memcpy(a,b,n); }", "utf-8")
     (tmp_path / "test_lib.c").write_text("void g(char*a,char*b,int n){ memcpy(a,b,n); }", "utf-8")
