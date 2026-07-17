@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     # --- Scanner ---------------------------------------------------------
     context_lines: int = Field(default=3, ge=0, description="Snippet context radius.")
     max_file_bytes: int = Field(default=2_000_000, description="Skip files larger than this.")
+    exclude: list[str] = Field(
+        default_factory=list, description="Glob patterns of file paths to skip while scanning."
+    )
 
 
 def load_settings() -> Settings:

@@ -33,6 +33,7 @@ class Skepsis:
             RULES,
             context_lines=self.settings.context_lines,
             max_file_bytes=self.settings.max_file_bytes,
+            exclude=tuple(self.settings.exclude),
         )
 
     # -- individual stages -------------------------------------------------

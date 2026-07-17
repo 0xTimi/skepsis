@@ -43,3 +43,14 @@ def test_taint_symbol_captured(vulnerable_c: Path) -> None:
 def test_non_c_files_skipped(tmp_path: Path) -> None:
     (tmp_path / "readme.md").write_text("memcpy(a,b,len);", encoding="utf-8")
     assert Scanner().scan_path(tmp_path) == []
+
+
+def test_exclude_glob_skips_matching_files(tmp_path: Path) -> None:
+    (tmp_path / "lib.c").write_text("void f(char*a,char*b,int n){ memcpy(a,b,n); }", "utf-8")
+    (tmp_path / "test_lib.c").write_text("void g(char*a,char*b,int n){ memcpy(a,b,n); }", "utf-8")
+    all_hits = Scanner().scan_path(tmp_path)
+    assert any("test_lib.c" in f.location.path for f in all_hits)
+
+    filtered = Scanner(exclude=("*test*",)).scan_path(tmp_path)
+    assert filtered  # lib.c still scanned
+    assert not any("test_lib.c" in f.location.path for f in filtered)

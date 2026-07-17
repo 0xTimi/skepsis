@@ -70,9 +70,14 @@ def scan(
     show_rejected: bool = typer.Option(
         False, "--show-rejected", help="Include findings the panel rejected."
     ),
+    exclude: list[str] = typer.Option(
+        [], "--exclude", "-x", help="Glob(s) of paths to skip, e.g. '*/test*' (repeatable)."
+    ),
 ) -> None:
     """Scan PATH and triage findings through the multi-model consensus panel."""
     settings = _settings(panel=panel, threshold=threshold)
+    if exclude:
+        settings.exclude = list(exclude)
     try:
         engine = Skepsis(settings)
         if not no_triage:

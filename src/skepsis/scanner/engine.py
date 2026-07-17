@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 from collections.abc import Iterable, Iterator
+from fnmatch import fnmatch
 from pathlib import Path
 
 from skepsis.models import Finding, Location
@@ -13,21 +14,40 @@ from skepsis.scanner.patterns import RULES, Rule
 C_EXTENSIONS = frozenset({".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".hxx", ".inl"})
 
 
-def _iter_source_files(root: Path, max_bytes: int) -> Iterator[Path]:
-    """Yield candidate C/C++ files under ``root`` (or ``root`` itself if a file)."""
+def _iter_source_files(
+    root: Path, max_bytes: int, exclude: tuple[str, ...] = ()
+) -> Iterator[Path]:
+    """Yield candidate C/C++ files under ``root`` (or ``root`` itself if a file).
+
+    ``exclude`` is a tuple of glob patterns matched against each file's path; a
+    match skips the file. Handy for keeping tests/examples/vendored code out of an
+    audit (e.g. ``"*/test*"``, ``"*/examples/*"``).
+    """
     if root.is_file():
         candidates: Iterable[Path] = [root]
     else:
         candidates = sorted(root.rglob("*"))
+    root_is_dir = root.is_dir()
     for path in candidates:
         if not path.is_file() or path.suffix.lower() not in C_EXTENSIONS:
             continue
+        if exclude:
+            rel = str(path.relative_to(root)) if root_is_dir else path.name
+            if _is_excluded(rel, path.name, exclude):
+                continue
         try:
             if path.stat().st_size > max_bytes:
                 continue
         except OSError:
             continue
         yield path
+
+
+def _is_excluded(rel: str, name: str, patterns: tuple[str, ...]) -> bool:
+    # Match against the path relative to the scan root (and the bare filename),
+    # so patterns like "*/test*" or "*test*" aren't tripped by ancestor dirs
+    # above the root.
+    return any(fnmatch(rel, pat) or fnmatch(name, pat) for pat in patterns)
 
 
 def _strip_line_noise(line: str) -> str:
@@ -70,6 +90,8 @@ class Scanner:
         Radius (in lines) of source context captured in each finding's snippet.
     max_file_bytes:
         Files larger than this are skipped (generated blobs, vendored amalgams).
+    exclude:
+        Glob patterns of paths to skip (e.g. ``"*/test*"``, ``"*/examples/*"``).
     """
 
     def __init__(
@@ -78,15 +100,17 @@ class Scanner:
         *,
         context_lines: int = 3,
         max_file_bytes: int = 2_000_000,
+        exclude: tuple[str, ...] = (),
     ) -> None:
         self.rules = rules
         self.context_lines = context_lines
         self.max_file_bytes = max_file_bytes
+        self.exclude = exclude
 
     def scan_path(self, root: str | Path) -> list[Finding]:
         root = Path(root)
         findings: list[Finding] = []
-        for path in _iter_source_files(root, self.max_file_bytes):
+        for path in _iter_source_files(root, self.max_file_bytes, self.exclude):
             findings.extend(self.scan_file(path, display_root=root))
         # Deterministic ordering: by file, then line.
         findings.sort(key=lambda f: (f.location.path, f.location.line, f.rule_id))
