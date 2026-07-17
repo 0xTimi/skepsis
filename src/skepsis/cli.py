@@ -119,10 +119,13 @@ def scan(
 
 @app.command()
 def verify(
-    harness: Path = typer.Argument(..., exists=True, help="Self-contained C proof-of-concept."),
+    harness: Path = typer.Argument(..., exists=True, help="C proof-of-concept."),
     runs: int = typer.Option(20, "--runs", "-n", min=1, help="Number of executions."),
     sanitizers: str = typer.Option("address,undefined", "--sanitizers", help="-fsanitize= list."),
     cc: str = typer.Option("cc", "--cc", help="C compiler to use."),
+    include: list[str] = typer.Option(
+        [], "--include", "-I", help="Add an include search path (so the PoC can #include the lib)."
+    ),
 ) -> None:
     """Compile HARNESS with sanitizers and run it repeatedly, reporting crash rate."""
     runner = SanitizerRunner(cc, sanitizers=sanitizers)
@@ -130,7 +133,7 @@ def verify(
         err.print(f"[red]C compiler {cc!r} not found on PATH.[/]")
         raise typer.Exit(code=2)
     try:
-        result = runner.verify_file(harness.name, harness, runs=runs)
+        result = runner.verify_file(harness.name, harness, runs=runs, include_dirs=tuple(include))
     except RuntimeError as exc:
         err.print(f"[red]{exc}[/]")
         raise typer.Exit(code=2) from exc

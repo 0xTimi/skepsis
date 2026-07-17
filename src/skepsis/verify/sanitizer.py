@@ -49,9 +49,20 @@ class SanitizerRunner:
         return shutil.which(self.cc) is not None
 
     def verify_source(
-        self, finding_id: str, source: str, *, runs: int, argv: list[str] | None = None
+        self,
+        finding_id: str,
+        source: str,
+        *,
+        runs: int,
+        argv: list[str] | None = None,
+        include_dirs: tuple[str, ...] = (),
     ) -> SanitizerResult:
-        """Compile ``source`` and run it ``runs`` times, counting sanitizer crashes."""
+        """Compile ``source`` and run it ``runs`` times, counting sanitizer crashes.
+
+        ``include_dirs`` adds ``-I`` search paths, so a PoC can ``#include`` the
+        library under test (e.g. a single-file amalgamation) instead of being fully
+        self-contained.
+        """
         if not self.available():
             raise RuntimeError(f"C compiler {self.cc!r} not found on PATH.")
         with tempfile.TemporaryDirectory(prefix="skepsis-asan-") as tmp:
@@ -59,25 +70,36 @@ class SanitizerRunner:
             src = tmpdir / "poc.c"
             binary = tmpdir / "poc"
             src.write_text(source, encoding="utf-8")
-            self._compile(src, binary)
+            self._compile(src, binary, include_dirs)
             return self._run_many(finding_id, binary, runs=runs, argv=argv or [])
 
     def verify_file(
-        self, finding_id: str, source_path: Path, *, runs: int, argv: list[str] | None = None
+        self,
+        finding_id: str,
+        source_path: Path,
+        *,
+        runs: int,
+        argv: list[str] | None = None,
+        include_dirs: tuple[str, ...] = (),
     ) -> SanitizerResult:
         return self.verify_source(
-            finding_id, Path(source_path).read_text(encoding="utf-8"), runs=runs, argv=argv
+            finding_id,
+            Path(source_path).read_text(encoding="utf-8"),
+            runs=runs,
+            argv=argv,
+            include_dirs=include_dirs,
         )
 
     # -- internals --------------------------------------------------------
 
-    def _compile(self, src: Path, binary: Path) -> None:
+    def _compile(self, src: Path, binary: Path, include_dirs: tuple[str, ...] = ()) -> None:
         cmd = [
             self.cc,
             f"-fsanitize={self.sanitizers}",
             "-fno-omit-frame-pointer",
             "-g",
             "-O1",
+            *(f"-I{d}" for d in include_dirs),
             str(src),
             "-o",
             str(binary),
