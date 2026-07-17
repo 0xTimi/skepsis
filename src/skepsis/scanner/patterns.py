@@ -118,11 +118,14 @@ RULES: tuple[Rule, ...] = (
         severity=Severity.HIGH,
         title="Array write with a computed (multiplicative) index",
         message=(
-            "Assignment to an array/pointer element whose index is a computed "
-            "expression involving multiplication (typically a 2-D offset like "
-            "row*width+col). Verify the index cannot exceed the buffer bounds."
+            "Assignment to an array/pointer element whose index multiplies two "
+            "non-constant terms (typically a 2-D offset like row*width+col). Verify "
+            "the index cannot exceed the buffer bounds."
         ),
-        pattern=_c(r"\[[^\]]*\*[^\]]*\]\s*=(?!=)"),
+        # Require a `<expr> * <expr>` where neither side is a numeric literal, so
+        # constant strides (buf[i*2]=…) that pepper DSP code don't drown real 2-D
+        # offset writes (frame[y*width+x]=…).
+        pattern=_c(r"\[[^\]]*[A-Za-z_)\]]\s*\*\s*[A-Za-z_(][^\]]*\]\s*=(?!=)"),
         negative_guards=("sizeof",),
     ),
     # --- Verification-order flaws (CWE-696) ------------------------------
